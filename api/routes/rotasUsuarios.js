@@ -2,42 +2,52 @@ import { BD } from "../db.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
-class UsuariosController 
-{static async login(req, res) {
-  const { email, senha } = req.body;
+const SECRET_KEY = "chave_api_gfp";
 
-  try {
+class UsuariosController {
+  static async login(req, res) {
+    const { email, senha } = req.body;
+
+    try {
       const resultado = await BD.query(
-          `SELECT * FROM usuarios WHERE email = $1`,
-          [email]
+        `SELECT * FROM usuarios WHERE email = $1 and ativo = true`,
+        [email]
       );
 
       if (resultado.rows.length === 0) {
-          return res.status(401).json({ message: 'Email ou senha inválidos' });
+        return res.status(401).json({ message: "Email ou senha inválidos" });
       }
 
       const usuarios = resultado.rows[0];
       const senhaValida = await bcrypt.compare(senha, usuarios.senha);
 
       if (!senhaValida) {
-          return res.status(401).json({ message: 'Email ou senha inválidos' });
+        return res.status(401).json({ message: "Senha inválidos" });
       }
 
       const token = jwt.sign(
-          {id_usuario: usuarios.id_usuario, nome: usuarios.nome, email: usuarios.email},
-          SECRET_KEY, {expiresIn: '1h'})
+        { id: usuarios.id_usuario, nome: usuarios.nome, email: usuarios.email },
+        SECRET_KEY,
+        { expiresIn: "1h" }
+      );
 
-      res.status(200).json({ message: 'Login realizado com sucesso', token });
-  } catch (error) {
-      console.error('Erro ao realizar login:', error);
-      res.status(500).json({ message: 'Erro ao realizar login', error: error.message });
+      return res.status(200).json({
+        token,
+        id_usuario: usuarios.id_usuario,
+        nome: usuarios.nome,
+        email: usuarios.email,
+        tipo_acesso: usuarios.tipo_acesso,
+      });
+    } catch (error) {
+      console.error("Erro ao realizar login:", error);
+      res
+        .status(500)
+        .json({ message: "Erro ao realizar login", error: error.message });
+    }
   }
-}
-
 
   static async novoUsuario(req, res) {
     const { nome, email, senha, tipo_acesso } = req.body;
-    
 
     try {
       const senhaCriptografada = await bcrypt.hash(senha, 10);
@@ -60,7 +70,9 @@ class UsuariosController
 
   static async listarTodos(req, res) {
     try {
-      const resultado = await BD.query("SELECT * FROM usuarios");
+      const resultado = await BD.query(
+        "SELECT * FROM usuarios WHERE ativo = true"
+      );
       return res.status(200).json({ usuarios: resultado.rows });
     } catch (error) {
       console.error("Erro ao buscar usuários:", error);
@@ -92,7 +104,7 @@ class UsuariosController
   }
 
   static async atualizar(req, res) {
-    const { id_usuario } = req.params;
+    const id_usuario = req.params.id; 
     const { nome, email, senha, tipo_acesso, ativo } = req.body;
   
     try {
@@ -108,8 +120,10 @@ class UsuariosController
         valores.push(email);
       }
       if (senha !== undefined) {
+        const saltRounds = 10;
+        const senhaCriptografada = await bcrypt.hash(senha, saltRounds);
         campos.push(`senha = $${valores.length + 1}`);
-        valores.push(senha);
+        valores.push(senhaCriptografada);
       }
       if (tipo_acesso !== undefined) {
         campos.push(`tipo_acesso = $${valores.length + 1}`);
@@ -121,45 +135,40 @@ class UsuariosController
       }
   
       if (campos.length === 0) {
-        return res.status(400).json({ message: 'Nenhum campo para atualizar' });
+        return res.status(400).json({ message: "Nenhum campo para atualizar" });
       }
   
-      // Adiciona id_usuario ao final e usa como parâmetro na cláusula WHERE
       valores.push(id_usuario);
-      const query = `UPDATE usuarios SET ${campos.join(', ')} WHERE id_usuario = $${valores.length} RETURNING *`;
+      const query = `UPDATE usuarios SET ${campos.join(
+        ", "
+      )} WHERE id_usuario = $${valores.length} RETURNING *`;
   
       const usuario = await BD.query(query, valores);
   
       if (usuario.rows.length === 0) {
-        return res.status(404).json({ message: 'Usuario não encontrado' });
+        return res.status(404).json({ message: "Usuário não encontrado" });
       }
   
       res.status(200).json(usuario.rows[0]);
     } catch (error) {
-      console.error('Erro ao atualizar usuário:', error);
-      res.status(500).json({ message: 'Erro ao atualizar usuario', error: error.message });
+      console.error("Erro ao atualizar usuário:", error);
+      res
+        .status(500)
+        .json({ message: "Erro ao atualizar usuário", error: error.message });
     }
   }
   
+
   static async deletar(req, res) {
     const { id_usuario } = req.params;
 
     try {
       const resultado = await BD.query(
-        "UPDATE usuarios SET ativo = false WHERE id_usuario = $1",
-        [id_usuario]
-      );
-
-      if (resultado.rowCount === 0) {
-        return res.status(404).json({ mensagem: "Usuário não encontrado" });
-      }
-
-      return res.status(200).json({ mensagem: "Usuário desativado com sucesso" });
+        `UPDATE usuarios SET ativo = false WHERE id_usuario = $1`, [id_usuario]);
+        return res.status(200).json({ mensagem: "Usuário desativado com sucesso" });
     } catch (error) {
       console.error("Erro ao desativar o usuário:", error);
-      return res
-        .status(500)
-        .json({ mensagem: "Erro ao desativar o usuário", erro: error.message });
+      return res.status(500).json({ mensagem: "Erro ao desativar o usuário", erro: error.message });
     }
   }
 }

@@ -1,7 +1,13 @@
+// index.js
 import express from 'express';
-import { testarConexao } from './db.js';
 import cors from 'cors';
-import rotasUsuarios from './routes/rotasUsuarios.js';
+import { testarConexao } from './db.js'; // se db.js estiver no mesmo diretório
+import RotasUsuarios, { autenticarToken } from './routes/rotasUsuarios.js'; // se rotasUsuarios.js estiver na pasta routes
+import RotasCategorias from './routes/rotasCategorias.js'; // se rotasCategorias.js estiver na pasta routes
+import RotasSubCategorias from './routes/rotasSubCategorias.js';
+import RotasLocalTrasacao from './routes/rotasLocalTransacao.js';
+import RotasTransacao from './routes/rotasTransacao.js';
+
 
 
 const app = express();
@@ -11,24 +17,51 @@ app.use(cors());
 app.use(express.json());
 
 app.get('/', (req, res) => {
-    res.send('API funcionando!');
-});
+    res.send('API rodando');
+})
 
-//rotas usuarios 
-app.post('/usuarios', rotasUsuarios.novoUsuario);
-//leitora
-app.get('/usuarios', rotasUsuarios.listarTodos);
-//login
-app.post('/usuarios/login', rotasUsuarios.login);
-//atualizar todos os campos
-app.put('/usuarios/:id_usuario', rotasUsuarios.atualizarTodosCampos);
-//atualizar 
-app.patch('/usuarios/:id_usuario', rotasUsuarios.atualizar);
-//deletar usuario
-app.patch('/usuarios/:id_usuario', rotasUsuarios.deletar);
+// Rotas de Usuários
+app.post('/usuarios', RotasUsuarios.novoUsuario);
+app.get('/usuarios', autenticarToken, RotasUsuarios.listarTodos);
+app.put('/usuarios/:id', autenticarToken, RotasUsuarios.atualizarTodosCampos);
+app.delete('/usuarios/:id_usuario', autenticarToken, RotasUsuarios.deletar);
+app.post('/usuarios/login', RotasUsuarios.login);
+app.patch('/usuarios/:id',autenticarToken, RotasUsuarios.atualizar);
 
-//
+// Rotas de Categorias
+app.post('/categorias', autenticarToken, RotasCategorias.novaCategoria);
+app.put('/categorias/:id',  autenticarToken, RotasCategorias.atualizarCategoria);
+app.get('/categorias', autenticarToken, RotasCategorias.listarCategorias);
+app.delete('/categorias/:id', autenticarToken, RotasCategorias.deletarcategoria);
+app.patch('/categorias/:id',  autenticarToken, RotasCategorias.editar);
+
+// Rotas de SubCategorias
+app.post('/subcategorias',  RotasSubCategorias.novaSubcategoria);
+app.put('/subcategorias/:id', autenticarToken, RotasSubCategorias.atualizarSubcategoria);
+app.get('/subcategorias', autenticarToken, RotasSubCategorias.listarSubcategorias);
+app.delete('/subcategorias/:id',  autenticarToken, RotasSubCategorias.deletarcategoria);
+app.patch('/subcategorias/:id', autenticarToken, RotasSubCategorias.editar);
+
+// Rotas de LocalTrasacao
+app.post('/localtransacao', RotasLocalTrasacao.novoLocalTrasacao);
+app.put('/localtransacao/:id', autenticarToken, RotasLocalTrasacao.atualizarLocalTrasacao);
+app.get('/localtransacao', autenticarToken, RotasLocalTrasacao.listarLocalTrasacao);
+app.delete('/localtransacao/:id', autenticarToken, RotasLocalTrasacao.deletarLocalTrasacao);
+app.patch('/localtransacao/:id', autenticarToken, RotasLocalTrasacao.editar);
+
+
+// Rotas de Transacao
+app.post('/transacao', RotasTransacao.novaTransacao);
+app.put('/transacao/:id', autenticarToken, RotasTransacao.atualizartransacao);
+app.get('/transacao', autenticarToken, RotasTransacao.listartransacao);
+app.delete('/transacao/:id', autenticarToken, RotasTransacao.deletartransacao);
+app.patch('/transacao/:id', autenticarToken, RotasTransacao.editar);
+
+
+
+   
+
 const porta = 3000;
 app.listen(porta, () => {
-    console.log(`Api http://localhost:${porta}`);
+    console.log(`API rodando: http://localhost:${porta}`);
 });
