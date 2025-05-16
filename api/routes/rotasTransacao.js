@@ -95,12 +95,10 @@ class RotasTransacao {
 
       res.status(200).json(resultado.rows[0]);
     } catch (error) {
-      res
-        .status(500)
-        .json({
-          message: "Erro ao atualizar a transacao",
-          error: error.message,
-        });
+      res.status(500).json({
+        message: "Erro ao atualizar a transacao",
+        error: error.message,
+      });
     }
   }
 
@@ -109,12 +107,10 @@ class RotasTransacao {
       const transacao = await BD.query("SELECT * FROM transacoes");
       res.status(200).json(transacao.rows);
     } catch (error) {
-      res
-        .status(500)
-        .json({
-          message: "Erro ao listar as transacoes",
-          error: error.message,
-        });
+      res.status(500).json({
+        message: "Erro ao listar as transacoes",
+        error: error.message,
+      });
     }
   }
 
@@ -220,14 +216,111 @@ class RotasTransacao {
 
       return res.status(200).json(transacao.rows[0]);
     } catch (error) {
-      res
-        .status(500)
-        .json({
-          message: "erro ao atualizar subcategoria",
-          error: error.message,
-        });
+      res.status(500).json({
+        message: "erro ao atualizar subcategoria",
+        error: error.message,
+      });
     }
   }
+  transacao;
+  // criar uma rota que permite filtrar transações por data de vencimento ou data de pagamento
+  static async filtrarPorData(req, res) {
+    const { data_inicio, data_fim, tipo_data } = req.query;
+
+    let colunaData;
+    if (tipo_data == "vencimento") {
+      colunaData = "data_vencimento";
+    } else if (tipo_data == "pagamento") {
+      colunaData = "data_pagamento";
+    } else {
+      return res.status(400).json({
+        message: "Tipo de data inválido, use vencimento ou pagamento",
+      });
+    }
+    try {
+      const query = `
+    SELECT t.*, u.nome AS nome_usuario, ct.nome AS nome From transacoes AS t
+    LEFT JOIN usuarios AS u ON t.id_usuario = u.id_usuario
+    JOIN contas ct ON t.id_conta = ct.id_conta
+    where ${colunaData} BETWEEN $1 AND $2
+    ORDER BY ${colunaData} ASC
+    `;
+      const transacoes = await BD.query(query, [data_inicio, data_fim]);
+
+      res.status(200).json(transacoes.rows);
+    } catch (error) {
+      console.error("Erro ao filtrar transações por data", error);
+      res.status(500).json({
+        message: "erro ao atualizar subcategoria",
+        error: error.message,
+      });
+    }
+  }
+
+  // somando transacoes entrada ou saida
+  static async somarTransacoes(req, res) {
+    const { tipo, id_usuario } = req.query;
+    try {
+      const tipoTransacao = tipo.toUpperCase();
+
+      const query = `SELECT SUM(valor) AS total
+         FROM transacoes
+          WHERE tipo_transacao = $1 AND id_usuario = $2
+        `
+      const resultado = await BD.query(query, [tipoTransacao, id_usuario]);
+
+      let total = resultado.rows[0].total;
+      if (total === null) {
+        total = 0;
+      }
+      res.status(200).json({ total: parseFloat(total) });
+    } catch (error) {
+      console.error("Erro ao somar transações", error);
+      res.status(500).json({
+        message: "Erro ao somar transações",
+        error: error.message,
+      });
+    }
+  }
+
+  static async transacaoVencidas(req, res) {
+    const { id_usuario } = req.params;
+
+    try {
+      const query = `
+      SELECT t.valor, t.data_transacao, t.data_vencimento, t.data_pagamento,
+       u.nome AS nome_usuario, 
+      c.nome AS nome_conta
+      ct.nome AS nome_categoria,
+      s.nome AS nome_subcategoria
+      FROM transacoes AS t
+      LEFT JOIN usuarios AS u ON t.id_usuario = u.id_usuario
+      LEFT JOIN contas AS u ON t.id_consta = u.id_conta
+      LEFT JOIN categorias AS c ON t.id_categoria = c.id_categoria
+      LEFT JOIN subcategorias AS s ON t.id_subcategoria = s.id_subcategoria
+      WHERE t.data_vencimento < CURRENT_DATE -- Filtra transações vencidas
+      AND t.id_usuario = $1
+      ORDER BY t.data_vencimento ASC
+`
+const resultado = await BD.query(query, [id_usuario]);
+
+// função para formatar data 
+const formatarDataBr = (data) => {
+  if (!data) return null;
+  return new Date(data).toLocaleDateString("pt-BR", )
+}
+  const dadosFormatada = resultado.rows.map(transacao => {{
+    const dataTransacao = formatarDataBr(transacao.data_transacao);
+    const dataVencimento = formatarDataBr(transacao.data_vencimento);
+    const dataPagamento = formatarDataBr(transacao.data_pagamento);
+  }})
+  return res.status(200).json(dadosFormatada);
+
+    } catch (error) {
+      
+    }
+  }
+
 }
 
 export default RotasTransacao;

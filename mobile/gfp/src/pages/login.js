@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
+  Switch
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
@@ -20,6 +21,21 @@ export default function Login() {
   const [senha, setSenha] = useState('');
   const [mensagem, setMensagem] = useState('');
   const navigation = useNavigation();
+  const [lenbrar, setLenbrar] = useState(false);
+  useEffect(() => {
+  const buscarUsuarioLogado = async () => {
+    const usuarioLogado = AsyncStorage.getItem('usuarioLogado');
+    if (usuarioLogado) {
+      const usuario = JSON.parse(usuarioLogado);
+      if (usuario.lenbrar == true){
+        navigation.navigate('MenuDrawer');
+      }
+    }
+  }
+
+  buscarUsuarioLogado();
+}, [])
+
 
   async function botaoEntrar() {
     if (!email || !senha) {
@@ -34,9 +50,9 @@ export default function Login() {
         body: JSON.stringify({ email, senha }),
       });
 
+      const dados = await resposta.json();
       if (resposta.ok) {
-        const dados = await resposta.json();
-        await AsyncStorage.setItem('usuarioLogado', JSON.stringify(dados));
+        await AsyncStorage.setItem('usuarioLogado', JSON.stringify(...dados, lenbrar));
         navigation.navigate('Pricipal');
       } else {
         setMensagem('❌ Email ou senha inválidos.');
@@ -96,7 +112,14 @@ export default function Login() {
         <TouchableOpacity style={styles.buttonSecondary} onPress={botaoLimpar}>
           <Text style={styles.buttonTextSecondary}>Limpar</Text>
         </TouchableOpacity>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 20, gap: 10 }}>
+        <Switch velue = {lenbrar} onValueChange = {setLenbrar}/>
+        <Text style={styles.label}>Lenbrar-me</Text>
+        </View>
       </View>
+        
+      
+      
     </KeyboardAvoidingView>
   );
 }

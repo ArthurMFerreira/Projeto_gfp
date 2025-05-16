@@ -8,6 +8,7 @@ function Login() {
   const [senha, setSenha] = useState("");
   const [mensagem, setMensagem] = useState("");
   const navigate = useNavigate();
+  const [lembrar, setLembrar] = useState(false);
 
   async function botaoEntrar(e) {
     e.preventDefault();
@@ -26,7 +27,7 @@ function Login() {
 
       if (resposta.ok) {
         const dados = await resposta.json();
-        localStorage.setItem("usuarioLogado", JSON.stringify(dados));
+        localStorage.setItem("usuarioLogado", JSON.stringify(...dados, lembrar));
         navigate('Principal')
       } else {
         setMensagem("❌ Email ou senha inválidos.");
@@ -75,6 +76,19 @@ function Login() {
           </div>
 
           {mensagem && <p className="mensagem">{mensagem}</p>}
+          
+          <div>
+            <div style={{display: 'flex', alignItems: 'center'}}>
+              <input
+                type="checkbox"
+                checked={lembrar}
+                onChange={(e) => setLembrar(e.target.checked)}
+              />
+              <label>Lembrar de mim</label>
+
+              <a href="/recuperar-senha" className="esqueci-senha">Esqueci minha senha</a>
+            </div>
+          </div>
 
           <button type="submit" className="btn-primary">Entrar</button>
           <button type="button" onClick={botaoLimpar} className="btn-secondary">Limpar</button>

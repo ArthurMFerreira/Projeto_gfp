@@ -121,27 +121,21 @@ class RotasCategorias {
       }
       //filter por categoria
 static async filtrarCategoria(req, res) {
-    //o valor sera enviado por parametro na url, deve ser enviado desta forma
-    //  ?tipo_transacao=entrada
-    const { tipo_transacao } = req.query;
+   const {tipo_transacao} = req.query;
+   try {
+    const query = `SELECT * FROM categorias WHERE tipo_transacao = $1 AND ativo = true ORDER BY nome DESC`;
 
-    try {
-      const filtros = [];
-      const valores = [];
+    const valores = [tipo_transacao];
 
-      if (tipo_transacao) {
-        filtros.push(`tipo_transacao = $${valores.length + 1}`);
-        valores.push(tipo_transacao);
-      }
-      const query = `SELECT * FROM categorias 
-      ${filtros.length ? `WHERE ${filtros.join("AND")}` : ""} and ativo = true 
-      ORDER BY id_categorias DESC
-      `;
+    const reposta = await BD.query(query, valores);
 
-      const resultado = await BD.query(query, valores)
-    } catch (error) {
-      
-    }
+    return res.status(200).json(reposta.rows);
+
+   } catch (error) {
+    console.error('Erro ao filtrar categorias', error);
+    res.status(500).json({ message: 'Erro ao filtrar categorias', error: error.message });
+    
+   }
 }
 
 }
