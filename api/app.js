@@ -26,7 +26,7 @@ app.get('/usuarios', autenticarToken, RotasUsuarios.listarTodos);
 app.put('/usuarios/:id', autenticarToken, RotasUsuarios.atualizarTodosCampos);
 app.delete('/usuarios/:id_usuario', autenticarToken, RotasUsuarios.deletar);
 app.post('/usuarios/login', RotasUsuarios.login);
-app.patch('/usuarios/:id',autenticarToken, RotasUsuarios.atualizar);
+app.patch('/usuarios/:id', autenticarToken, RotasUsuarios.atualizar);
 
 
 // Rotas de Categorias
@@ -46,10 +46,10 @@ app.patch('/subcategorias/:id', autenticarToken, RotasSubCategorias.editar);
 
 // Rotas de Contas
 app.post('/contas', RotasContas.novoConta);
-app.get('/contas/filtrarContas', RotasContas.filtrarContas);
+app.get('/contas/filtrarContas', autenticarToken, RotasContas.filtrarContas);
 app.put('/contas/:id_conta', RotasContas.atualizarConta);
 app.get('/contas', RotasContas.listarConta);
-app.delete('/contas/:id', RotasContas.deletarConta);
+app.delete('/contas/:id', autenticarToken, RotasContas.deletarConta);
 app.patch('/contas/:id_conta', RotasContas.editar);
 
 

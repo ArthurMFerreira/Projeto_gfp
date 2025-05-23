@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { enderecoServidor } from "../utils";
 import "./Login.css";
@@ -12,23 +12,26 @@ function Login() {
 
   async function botaoEntrar(e) {
     e.preventDefault();
-
-    if (!email || !senha) {
-      setMensagem("⚠️ Preencha todos os campos.");
-      return;
-    }
-
     try {
+      if (!email || !senha) {
+        setMensagem("⚠️ Preencha todos os campos.");
+        return;
+      }
+
       const resposta = await fetch(`${enderecoServidor}/usuarios/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, senha }),
+        body: JSON.stringify({ 
+          email: email, senha: senha }),
       });
 
+      const dados = await resposta.json();
       if (resposta.ok) {
-        const dados = await resposta.json();
-        localStorage.setItem("usuarioLogado", JSON.stringify(...dados, lembrar));
-        navigate('Principal')
+        localStorage.setItem(
+          "UsuarioLogado",
+          JSON.stringify({...dados, lembrar})
+        );
+        navigate("Principal");
       } else {
         setMensagem("❌ Email ou senha inválidos.");
       }
@@ -43,6 +46,19 @@ function Login() {
     setSenha("");
     setMensagem("");
   }
+  useEffect(() => {
+    const buscarUsuarioLogado = async () => {
+      const usuarioLogado = localStorage.getItem("usuarioLogado");
+      if (usuarioLogado) {
+        const usuario = JSON.parse(usuarioLogado);
+        if (usuario.lenbrar == true) {
+          navigate("MenuDrawer");
+        }
+      }
+    };
+
+    buscarUsuarioLogado();
+  }, []);
 
   return (
     <div className="login-background">
@@ -76,9 +92,9 @@ function Login() {
           </div>
 
           {mensagem && <p className="mensagem">{mensagem}</p>}
-          
+
           <div>
-            <div style={{display: 'flex', alignItems: 'center'}}>
+            <div style={{ display: "flex", alignItems: "center" }}>
               <input
                 type="checkbox"
                 checked={lembrar}
@@ -86,12 +102,18 @@ function Login() {
               />
               <label>Lembrar de mim</label>
 
-              <a href="/recuperar-senha" className="esqueci-senha">Esqueci minha senha</a>
+              <a href="/recuperar-senha" className="esqueci-senha">
+                Esqueci minha senha
+              </a>
             </div>
           </div>
 
-          <button type="submit" className="btn-primary">Entrar</button>
-          <button type="button" onClick={botaoLimpar} className="btn-secondary">Limpar</button>
+          <button type="submit" onClick={botaoEntrar} className="btn-primary">
+            Entrar
+          </button>
+          <button type="button" onClick={botaoLimpar} className="btn-secondary">
+            Limpar
+          </button>
         </form>
       </div>
     </div>

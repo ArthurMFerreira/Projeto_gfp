@@ -1,35 +1,45 @@
-import Login from "./Login";
-import React, { useState, useEffect} from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+
 export default function Principal() {
     const [usuario, setUsuario] = useState({});
+    const navigate = useNavigate(); // Correção aqui
 
-    useEffect (() => {
+    useEffect(() => {
         const buscarUsuarioLogado = async () => {
             const usuarioLogado = await localStorage.getItem('usuarioLogado');
             if (usuarioLogado) {
                 setUsuario(JSON.parse(usuarioLogado));
             } else {
-                navigation.navigate('/');
+                navigate('/'); // Correção aqui
             }
-            
-        }
+        };
         buscarUsuarioLogado();
-    }, []);
-        const  botaoLogout = async () => {
-            try {
-                await localStorage.removeItem('usuarioLogado');
-            navigate('/');
-            } catch (error) {
-                console.error('Erro ao fazer logout:', error);
-            }
-            
-        }
+    }, [navigate]);
 
+    const botaoLogout = async () => {
+        try {
+            await localStorage.removeItem('usuarioLogado');
+            navigate('/'); // Correção aqui
+        } catch (error) {
+            console.error('Erro ao fazer logout:', error);
+        }
+    };
 
     return (
         <div>
-            <h1>Tela Principal</h1>
+            <div style={{
+                display: 'flex',
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                alignItems: 'center'
+            }}>
+                <p>Usuário: {usuario?.nome || 'Desconhecido'}</p>
+                <button onClick={botaoLogout}>Sair</button>
+            </div>
+            <div>
+                <h1>Tela Principal</h1>
+            </div>
         </div>
     );
 }
