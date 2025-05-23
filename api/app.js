@@ -8,7 +8,8 @@ import RotasSubCategorias from './routes/rotasSubCategorias.js';
 import RotasContas from './routes/rotasConta.js';
 import RotasTransacao from './routes/rotasTransacao.js';
 
-
+import swaggerUi from 'swagger-ui-express';
+import swaggerSpec from './swagger.js'; // se swagger.js estiver no mesmo diretório
 
 const app = express();
 testarConexao();
@@ -16,21 +17,25 @@ testarConexao();
 app.use(cors());
 app.use(express.json());
 
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
 app.get('/', (req, res) => {
-    res.send('API rodando');
+    res.redirect('/api-docs');
 })
 
-// Rotas de Usuários
+
 app.post('/usuarios', RotasUsuarios.novoUsuario);
 app.get('/usuarios', autenticarToken, RotasUsuarios.listarTodos);
-app.put('/usuarios/:id', autenticarToken, RotasUsuarios.atualizarTodosCampos);
 app.delete('/usuarios/:id_usuario', autenticarToken, RotasUsuarios.deletar);
 app.post('/usuarios/login', RotasUsuarios.login);
+// Rotas de Usuários
 app.patch('/usuarios/:id', autenticarToken, RotasUsuarios.atualizar);
+app.put('/usuarios/:id', autenticarToken, RotasUsuarios.atualizarTodosCampos);
+
 
 
 // Rotas de Categorias
-app.post('/categorias', autenticarToken, RotasCategorias.novaCategoria);
+app.post('/categorias', RotasCategorias.novaCategoria);
 app.get('/categorias/filtrarCategoria', RotasCategorias.filtrarCategoria);
 app.put('/categorias/:id',  autenticarToken, RotasCategorias.atualizarCategoria);
 app.get('/categorias', autenticarToken, RotasCategorias.listarCategorias);
